@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager & Weather App</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:20px;
+    background: linear-gradient(135deg,#74ebd5,#ACB6E5);
+    min-height:100vh;
+}
+
+h2{
+    text-align:center;
+    color:#333;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    border:2px solid #6c63ff;
+    border-radius:8px;
+    outline:none;
+}
+
+input:focus{
+    border-color:#ff6b6b;
+}
+
+button{
+    padding:10px 15px;
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    background:#6c63ff;
+    color:white;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#ff6b6b;
+    transform:scale(1.05);
+}
+
+.task{
+    background:white;
+    border-left:6px solid #6c63ff;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.2);
+}
+
+#weather{
+    margin-top:15px;
+    font-size:18px;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.2);
+    width:320px;
+}
+</style>
+
+</head>
+<body>
+
+<h2>📝 Task Manager</h2>
+
+<form id="taskForm">
+    <input type="text" id="taskName" placeholder="Enter Task" required>
+    <button type="submit">➕ Add Task</button>
+</form>
+
+<br>
+
+<input type="text" id="search" placeholder="🔍 Search Task">
+
+<button onclick="showAll()">📋 Show All</button>
+
+<div id="taskList"></div>
+
+<hr>
+
+<h2>🌤️ Weather App</h2>
+
+<input type="text" id="city" placeholder="🏙️ Enter City Name">
+
+<button onclick="getWeather()">🌍 Get Weather</button>
+
+<div id="weather"></div>
+
+<script>
+
+// Local Storage
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+// Display Existing Tasks
+renderTasks();
+
+// Add Task
+document.getElementById("taskForm").onsubmit = function(e){
+
+    e.preventDefault();
+
+    let taskName = document.getElementById("taskName").value;
+
+    let task = {
+        id: Date.now(),
+        name: taskName
+    };
+
+    tasks.push(task);
+
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    renderTasks();
+
+    document.getElementById("taskForm").reset();
+};
+
+// Render Tasks
+function renderTasks(taskArray = tasks){
+
+    let output = "";
+
+    taskArray.map(task => {
+
+        output += `
+        <div class="task">
+            <h3>✅ ${task.name}</h3>
+
+            <button onclick="deleteTask(${task.id})">
+                🗑️ Delete
+            </button>
+        </div>
+        `;
+    });
+
+    document.getElementById("taskList").innerHTML = output;
+}
+
+// Delete Task
+function deleteTask(id){
+
+    tasks = tasks.filter(task => task.id !== id);
+
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    renderTasks();
+}
+
+// Search Filter
+document.getElementById("search").addEventListener("keyup", function(){
+
+    let keyword = this.value.toLowerCase();
+
+    let filteredTasks = tasks.filter(task =>
+        task.name.toLowerCase().includes(keyword)
+    );
+
+    renderTasks(filteredTasks);
+});
+
+// Show All
+function showAll(){
+    renderTasks();
+}
+
+// Weather Function
+async function getWeather(){
+
+    let city = document.getElementById("city").value.trim();
+
+    if(city === ""){
+        document.getElementById("weather").innerHTML =
+        "⚠️ Please enter a city name";
+        return;
+    }
+
+    const apiKey = "a811a48dd2b2c61a6a7a8012ee53c8e3";
+
+    try{
+
+        const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+        );
+
+        const data = await response.json();
+
+        if(data.cod != 200){
+            throw new Error("❌ City not found");
+        }
+
+        document.getElementById("weather").innerHTML =
+        `
+        <p>📍 <b>City:</b> ${data.name}</p>
+        <p>🌡️ <b>Temperature:</b> ${data.main.temp} °C</p>
+        <p>☁️ <b>Weather:</b> ${data.weather[0].main}</p>
+        <p>💧 <b>Humidity:</b> ${data.main.humidity}%</p>
+        `;
+
+    }
+    catch(error){
+
+        document.getElementById("weather").innerHTML =
+        error.message;
+    }
+}
+
+</script>
+
+</body>
+</html>
